@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anonymous Campus Confession Wall</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #ec4899;
+            --bg-dark: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
+            min-height: 100vh;
+            color: #e2e8f0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+            outline: none;
+        }
+
+        /* Animations */
+        .slide-up {
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .pulse-slow {
+            animation: pulse-slow 3s infinite;
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Floating Emojis */
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+            font-size: 24px;
+            z-index: 9999;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) scale(1.5); opacity: 0; }
+        }
+
+        /* Status Indicators */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .status-synced { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+        .status-offline { background-color: #ef4444; }
+        .status-loading { background-color: #f59e0b; animation: pulse 1s infinite; }
+
+        /* Modal Transitions */
+        .modal-backdrop {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-hidden .modal-backdrop { opacity: 0; pointer-events: none; }
+        .modal-hidden .modal-content { transform: scale(0.95) translateY(20px); opacity: 0; pointer-events: none; }
+        .modal-visible .modal-backdrop { opacity: 1; pointer-events: auto; }
+        .modal-visible .modal-content { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+
+    </style>
+</head>
+<body class="overflow-x-hidden pb-20">
+
+    <!-- Top Navigation -->
+    <nav class="fixed top-0 w-full z-40 glass-panel border-b border-white/5 px-4 py-3">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-lg shadow-lg shadow-purple-500/20">
+                    🎭
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Confession<span class="text-purple-400">Wall</span></h1>
+                    <div class="flex items-center text-[10px] text-gray-400 font-medium tracking-wide">
+                        <span id="connection-status-dot" class="status-dot status-offline"></span>
+                        <span id="connection-status-text">Disconnected</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openSettings()" class="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <button onclick="app.refreshData()" id="refresh-btn" class="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+                <button onclick="ui.openModal('post-modal')" class="bg-white text-black px-4 py-2 rounded-full text-sm font-bold hover:bg-gray-200 transition-transform active:scale-95 shadow-lg shadow-white/10 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-nib"></i> <span class="hidden sm:inline">Confess</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 px-4 max-w-3xl mx-auto min-h-screen">
+        
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-3 gap-3 mb-8">
+            <div class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group">
+                <div class="absolute inset-0 bg-purple-500/10 scale-0 group-hover:scale-100 transition-transform rounded-2xl"></div>
+                <div class="relative">
+                    <div class="text-2xl font-bold text-purple-400" id="stat-total">-</div>
+                    <div class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Confessions</div>
+                </div>
+            </div>
+            <div class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group">
+                <div class="absolute inset-0 bg-pink-500/10 scale-0 group-hover:scale-100 transition-transform rounded-2xl"></div>
+                <div class="relative">
+                    <div class="text-2xl font-bold text-pink-400" id="stat-reactions">-</div>
+                    <div class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Reactions</div>
+                </div>
+            </div>
+            <div class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group">
+                <div class="absolute inset-0 bg-blue-500/10 scale-0 group-hover:scale-100 transition-transform rounded-2xl"></div>
+                <div class="relative">
+                    <div class="text-2xl font-bold text-blue-400" id="stat-trending">-</div>
+                    <div class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Trending</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+            <button onclick="app.setFilter('all')" class="filter-btn active whitespace-nowrap px-5 py-2 rounded-full text-xs font-semibold bg-white/10 text-white border border-white/5 hover:bg-white/20 transition-all" data-filter="all">
+                🕰️ All
+            </button>
+            <button onclick="app.setFilter('trending')" class="filter-btn whitespace-nowrap px-5 py-2 rounded-full text-xs font-semibold bg-black/20 text-gray-400 border border-white/5 hover:bg-white/10 transition-all" data-filter="trending">
+                🔥 Trending
+            </button>
+            <button onclick="app.setFilter('recent')" class="filter-btn whitespace-nowrap px-5 py-2 rounded-full text-xs font-semibold bg-black/20 text-gray-400 border border-white/5 hover:bg-white/10 transition-all" data-filter="recent">
+                🆕 Recent
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loader-state" class="hidden flex-col items-center justify-center py-20">
+            <div class="loader w-8 h-8 border-purple-500 border-l-transparent mb-4"></div>
+            <p class="text-gray-400 text-sm">Loading confessions...</p>
+        </div>
+
+        <!-- Confession Wall -->
+        <div id="wall" class="space-y-4">
+            <!-- Cards injected here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center">
+            <div class="text-6xl mb-4 opacity-50">👻</div>
+            <h3 class="text-xl font-bold text-gray-300 mb-2">No Confessions Yet</h3>
+            <p class="text-gray-500 text-sm max-w-xs">Be the first to spill the tea! What's happening on campus?</p>
+            <button onclick="ui.openModal('post-modal')" class="mt-6 px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-full text-sm font-bold transition-colors">
+                Post First Confession
+            </button>
+        </div>
+    </main>
+
+    <!-- Post Modal -->
+    <div id="post-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-hidden">
+        <div class="modal-backdrop absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="ui.closeModal('post-modal')"></div>
+        <div class="modal-content relative w-full max-w-lg bg-[#1e293b] border border-white/10 sm:rounded-3xl rounded-t-3xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <span class="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">New Confession</span>
+                </h2>
+                <button onclick="ui.closeModal('post-modal')" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <textarea id="post-text" rows="5" class="glass-input w-full rounded-2xl p-4 text-base placeholder-gray-500 resize-none" placeholder="What's your secret? (Anonymous & Encrypted)..." maxlength="280"></textarea>
+                    <div class="flex justify-between mt-2 px-1">
+                        <span id="char-count" class="text-xs text-gray-500">0/280</span>
+                        <span class="text-xs text-purple-400 font-medium">Anonymous</span>
+                    </div>
+                </div>
+
+                <div class="bg-black/30 rounded-xl p-4 border border-white/5">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-gray-400 text-xs font-bold uppercase">AI Vibe Check</span>
+                        <span id="vibe-text" class="text-xs text-purple-300">Analyzing...</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
+                        <div id="vibe-bar" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 w-0 transition-all duration-500"></div>
+                    </div>
+                </div>
+
+                <button id="submit-btn" onclick="app.submitPost()" class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all active:scale-[0.98] flex justify-center items-center gap-2">
+                    <span>Post Confession</span>
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (For Database Connection) -->
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-hidden">
+        <div class="modal-backdrop absolute inset-0 bg-black/90 backdrop-blur-md" onclick="ui.closeModal('settings-modal')"></div>
+        <div class="modal-content relative w-full max-w-md mx-4 glass-panel rounded-3xl p-6 border border-white/10">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-database text-purple-400"></i> Database Connection
+            </h2>
+            <p class="text-sm text-gray-400 mb-6 leading-relaxed">
+                To see confessions from other phones, connect this app to a JSONBin.io database.
+                <br><br>
+                1. Go to <a href="https://jsonbin.io" target="_blank" class="text-purple-400 underline">JSONBin.io</a> (Free)<br>
+                2. Create a new Bin (Empty Array <code>[]</code>)<br>
+                3. Copy the <strong>Bin ID</strong> and your <strong>X-Master-Key</strong> below.
+            </p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">X-Master-Key</label>
+                    <input type="password" id="db-key" class="glass-input w-full rounded-lg px-4 py-3 text-sm" placeholder="$2b$10$...">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bin ID</label>
+                    <input type="text" id="db-id" class="glass-input w-full rounded-lg px-4 py-3 text-sm" placeholder="63f4...">
+                </div>
+                <button onclick="app.saveConfig()" class="w-full py-3 bg-white text-black rounded-lg font-bold hover:bg-gray-200 transition-colors">
+                    Save & Connect
+                </button>
+                <div class="text-center">
+                    <button onclick="app.useDemoMode()" class="text-xs text-gray-500 hover:text-gray-300 underline">
+                        Use Demo Mode (Local Only)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 glass-panel px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-[60]">
+        <i id="toast-icon" class="fa-solid fa-check-circle text-green-400"></i>
+        <span id="toast-msg" class="text-sm font-medium">Success!</span>
+    </div>
+
+    <script>
+        // --- Database Service (JSONBin.io) ---
+        class Database {
+            constructor() {
+                this.baseUrl = 'https://api.jsonbin.io/v3/b';
+                this.key = localStorage.getItem('confess_db_key');
+                this.binId = localStorage.getItem('confess_db_id');
+                this.demoMode = localStorage.getItem('confess_demo') === 'true';
+            }
+
+            isAuthenticated() {
+                return !this.demoMode && this.key && this.binId;
+            }
+
+            async fetchConfessions() {
+                if (this.demoMode) {
+                    // Simulate network delay
+                    await new Promise(r => setTimeout(r, 800));
+                    return JSON.parse(localStorage.getItem('demo_confessions')) || [];
+                }
+
+                if (!this.isAuthenticated()) return [];
+
+                try {
+                    const response = await fetch(`${this.baseUrl}/${this.binId}/latest`, {
+                        headers: { 'X-Master-Key': this.key, 'X-Bin-Meta': 'false' }
+                    });
+                    
+                    if (!response.ok) throw new Error('API Error');
+                    return await response.json();
+                } catch (error) {
+                    console.error("DB Error:", error);
+                    ui.toast('Failed to sync. Check settings.', 'error');
+                    return null; // Return null to indicate failure but keep old data visible
+                }
+            }
+
+            async saveConfessions(data) {
+                if (this.demoMode) {
+                    localStorage.setItem('demo_confessions', JSON.stringify(data));
+                    return true;
+                }
+
+                try {
+                    await fetch(`${this.baseUrl}/${this.binId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': this.key
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    return true;
+                } catch (error) {
+                    ui.toast('Connection lost! Data not saved.', 'error');
+                    return false;
+                }
+            }
+        }
+
+        // --- App Logic ---
+        const db = new Database();
+
+        const app = {
+            data: [],
+            filter: 'all',
+            isLoading: false,
+
+            init: async () => {
+                ui.showLoader(true);
+                
+                // Check auth
+                if (!db.isAuthenticated() && !db.demoMode) {
+                    ui.openModal('settings-modal');
+                    ui.showLoader(false);
+                    ui.updateStatus('disconnected');
+                    return;
+                }
+
+                await app.refreshData(false); // Initial load
+                
+                // Auto-refresh every 15 seconds
+                setInterval(() => app.refreshData(true), 15000);
+                
+                // Setup input listeners
+                document.getElementById('post-text').addEventListener('input', ui.vibeCheck);
+            },
+
+            refreshData: async (isBackground) => {
+                if (app.isLoading) return;
+                app.isLoading = true;
+                
+                if (!isBackground) ui.showLoader(true);
+                ui.updateStatus('loading');
+
+                const result = await db.fetchConfessions();
+                
+                if (result !== null) {
+                    app.data = result;
+                    ui.renderWall();
+                    ui.updateStats();
+                    ui.updateStatus('synced');
+                    if (isBackground && app.data.length > ui.currentCount) {
+                        ui.toast('New confessions loaded!', 'info');
+                    }
+                    ui.currentCount = app.data.length;
+                } else {
+                    ui.updateStatus('error');
+                }
+
+                app.isLoading = false;
+                ui.showLoader(false);
+                
+                // Stop refresh button spinning
+                const icon = document.querySelector('#refresh-btn i');
+                icon.classList.remove('fa-spin');
+            },
+
+            submitPost: async () => {
+                const text = document.getElementById('post-text').value.trim();
+                const btn = document.getElementById('submit-btn');
+                
+                if (text.length < 5) {
+                    ui.toast('Confession too short!', 'error');
+                    return;
+                }
+
+                // Optimistic UI Update
+                btn.innerHTML = '<div class="loader w-5 h-5 border-white border-l-transparent"></div> Posting...';
+                btn.disabled = true;
+
+                const newPost = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    text: text,
+                    timestamp: Date.now(),
+                    likes: 0,
+                    fire: 0,
+                    cry: 0
+                };
+
+                // Add locally first
+                app.data.unshift(newPost);
+                
+                // Save to cloud
+                const success = await db.saveConfessions(app.data);
+                
+                if (success) {
+                    ui.closeModal('post-modal');
+                    ui.renderWall();
+                    ui.updateStats();
+                    ui.toast('Confession Posted! 🔥', 'success');
+                    document.getElementById('post-text').value = '';
+                    ui.vibeCheck(); // Reset vibe bar
+                    ui.createFloatingEmojis(window.innerWidth/2, window.innerHeight/2);
+                } else {
+                    // Revert if failed
+                    app.data.shift();
+                    ui.toast('Failed to post. Try again.', 'error');
+                }
+
+                btn.innerHTML = '<span>Post Confession</span><i class="fa-solid fa-paper-plane text-sm"></i>';
+                btn.disabled = false;
+            },
+
+            react: async (id, type) => {
+                const post = app.data.find(p => p.id === id);
+                if (!post) return;
+
+                // Optimistic update
+                if(type === 'likes') post.likes++;
+                if(type === 'fire') post.fire++;
+                if(type === 'cry') post.cry++;
+
+                ui.renderCard(post); // Re-render just this card ideally, but full render is safer for sync simplicity
+                ui.renderWall(); 
+
+                // Sync to cloud
+                await db.saveConfessions(app.data);
+            },
+
+            setFilter: (filter) => {
+                app.filter = filter;
+                
+                // Update buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    if (btn.dataset.filter === filter) {
+                        btn.classList.add('bg-white/10', 'text-white', 'border-white/5');
+                        btn.classList.remove('bg-black/20', 'text-gray-400');
+                    } else {
+                        btn.classList.remove('bg-white/10', 'text-white', 'border-white/5');
+                        btn.classList.add('bg-black/20', 'text-gray-400');
+                    }
+                });
+                
+                ui.renderWall();
+            },
+
+            saveConfig: () => {
+                const key = document.getElementById('db-key').value.trim();
+                const id = document.getElementById('db-id').value.trim();
+
+                if (key && id) {
+                    localStorage.setItem('confess_db_key', key);
+                    localStorage.setItem('confess_db_id', id);
+                    localStorage.setItem('confess_demo', 'false');
+                    
+                    // Reload db instance
+                    db.key = key;
+                    db.binId = id;
+                    db.demoMode = false;
+                    
+                    ui.closeModal('settings-modal');
+                    app.init(); // Re-init with new creds
+                    ui.toast('Connected successfully!', 'success');
+                } else {
+                    ui.toast('Please enter both Key and ID', 'error');
+                }
+            },
+
+            useDemoMode: () => {
+                localStorage.setItem('confess_demo', 'true');
+                db.demoMode = true;
+                ui.closeModal('settings-modal');
+                app.init();
+                ui.toast('Demo Mode Active', 'info');
+            }
+        };
+
+        // --- UI Manager ---
+        const ui = {
+            currentCount: 0,
+
+            showLoader: (show) => {
+                const wall = document.getElementById('wall');
+                const loader = document.getElementById('loader-state');
+                const empty = document.getElementById('empty-state');
+                
+                if (show) {
+                    wall.classList.add('hidden');
+                    empty.classList.add('hidden');
+                    loader.classList.remove('hidden');
+                    loader.classList.add('flex');
+                } else {
+                    loader.classList.add('hidden');
+                    loader.classList.remove('flex');
+                    wall.classList.remove('hidden');
+                }
+            },
+
+            renderWall: () => {
+                const wall = document.getElementById('wall');
+                wall.innerHTML = '';
+
+                let filtered = [...app.data];
+                
+                // Sort by new
+                filtered.sort((a, b) => b.timestamp - a.timestamp);
+
+                if (app.filter === 'trending') {
+                    // Simple trending algo: total reactions > 5
+                    filtered = filtered.filter(p => (p.likes + p.fire + p.cry) > 2);
+                    filtered.sort((a, b) => (b.likes + b.fire + b.cry) - (a.likes + a.fire + a.cry));
+                }
+
+                if (filtered.length === 0) {
+                    document.getElementById('empty-state').classList.remove('hidden');
+                    document.getElementById('empty-state').classList.add('flex');
+                } else {
+                    document.getElementById('empty-state').classList.add('hidden');
+                    document.getElementById('empty-state').classList.remove('flex');
+                }
+
+                filtered.forEach(post => {
+                    wall.appendChild(ui.createCard(post));
+                });
+            },
+
+            createCard: (post) => {
+                const div = document.createElement('div');
+                div.className = 'glass-panel rounded-2xl p-5 slide-up border border-white/5 relative overflow-hidden group';
+                
+                const timeAgo = ui.timeSince(post.timestamp);
+                const totalReacts = post.likes + post.fire + post.cry;
+                
+                div.innerHTML = `
+                    <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-pink-500 opacity-50"></div>
+                    <div class="pl-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center text-xs text-gray-300 border border-white/10">
+                                    👤
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-gray-300">Anonymous</div>
+                                    <div class="text-[10px] text-gray-500">${timeAgo} ago</div>
+                                </div>
+                            </div>
+                            ${totalReacts > 5 ? '<span class="text-[10px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full border border-orange-500/20">🔥 Hot</span>' : ''}
+                        </div>
+                        
+                        <p class="text-gray-100 text-sm sm:text-base leading-relaxed mb-4 whitespace-pre-wrap">${ui.escapeHtml(post.text)}</p>
+                        
+                        <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                            <div class="flex gap-1">
+                                <button onclick="app.react('${post.id}', 'likes')" class="reaction-btn group/btn flex flex-col items-center justify-center w-10 h-10 rounded-xl hover:bg-white/5 transition-all">
+                                    <span class="text-lg group-active/btn:scale-125 transition-transform">😂</span>
+                                    <span class="text-[10px] text-gray-500 group-hover/btn:text-gray-300">${post.likes}</span>
+                                </button>
+                                <button onclick="app.react('${post.id}', 'fire')" class="reaction-btn group/btn flex flex-col items-center justify-center w-10 h-10 rounded-xl hover:bg-white/5 transition-all">
+                                    <span class="text-lg group-active/btn:scale-125 transition-transform">🔥</span>
+                                    <span class="text-[10px] text-gray-500 group-hover/btn:text-gray-300">${post.fire}</span>
+                                </button>
+                                <button onclick="app.react('${post.id}', 'cry')" class="reaction-btn group/btn flex flex-col items-center justify-center w-10 h-10 rounded-xl hover:bg-white/5 transition-all">
+                                    <span class="text-lg group-active/btn:scale-125 transition-transform">😭</span>
+                                    <span class="text-[10px] text-gray-500 group-hover/btn:text-gray-300">${post.cry}</span>
+                                </button>
+                            </div>
+                            <button class="text-gray-500 hover:text-white transition-colors p-2">
+                                <i class="fa-solid fa-share-nodes"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return div;
+            },
+
+            renderCard: (post) => {
+                // Helper to just update numbers if needed, for now we re-render wall in app.react
+                ui.renderWall();
+            },
+
+            updateStats: () => {
+                document.getElementById('stat-total').innerText = app.data.length;
+                const reacts = app.data.reduce((acc, curr) => acc + curr.likes + curr.fire + curr.cry, 0);
+                document.getElementById('stat-reactions').innerText = reacts;
+                const trending = app.data.filter(p => (p.likes + p.fire + p.cry) > 2).length;
+                document.getElementById('stat-trending').innerText = trending;
+            },
+
+            updateStatus: (state) => {
+                const dot = document.getElementById('connection-status-dot');
+                const text = document.getElementById('connection-status-text');
+                
+                dot.className = 'status-dot';
+                if (state === 'synced') {
+                    dot.classList.add('status-synced');
+                    text.innerText = 'Live Sync';
+                    text.classList.remove('text-red-400');
+                } else if (state === 'loading') {
+                    dot.classList.add('status-loading');
+                    text.innerText = 'Syncing...';
+                } else {
+                    dot.classList.add('status-offline');
+                    text.innerText = 'Offline';
+                    text.classList.add('text-red-400');
+                }
+            },
+
+            vibeCheck: (e) => {
+                const text = e ? e.target.value : document.getElementById('post-text').value;
+                const len = text.length;
+                document.getElementById('char-count').innerText = `${len}/280`;
+
+                // Fun logic for vibe bar
+                const vibeBar = document.getElementById('vibe-bar');
+                const vibeText = document.getElementById('vibe-text');
+                
+                let width = Math.min((len / 280) * 100, 100);
+                vibeBar.style.width = width + '%';
+
+                if (len < 10) {
+                    vibeText.innerText = "Analyzing...";
+                    vibeBar.className = "h-full bg-gray-600 w-0 transition-all duration-500";
+                } else if (text.toLowerCase().includes('love') || text.toLowerCase().includes('crush')) {
+                    vibeText.innerText = "Spicy 💕";
+                    vibeBar.className = "h-full bg-pink-500 transition-all duration-500";
+                } else if (text.toLowerCase().includes('hate') || text.toLowerCase().includes('fail')) {
+                    vibeText.innerText = "Dark Energy 🌑";
+                    vibeBar.className = "h-full bg-red-600 transition-all duration-500";
+                } else {
+                    vibeText.innerText = "Tea Spilled 🍵";
+                    vibeBar.className = "h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500";
+                }
+            },
+
+            toast: (msg, type = 'success') => {
+                const toast = document.getElementById('toast');
+                const icon = document.getElementById('toast-icon');
+                const text = document.getElementById('toast-msg');
+                
+                text.innerText = msg;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                
+                if (type === 'error') {
+                    icon.className = 'fa-solid fa-circle-exclamation text-red-400';
+                } else if (type === 'info') {
+                    icon.className = 'fa-solid fa-circle-info text-blue-400';
+                } else {
+                    icon.className = 'fa-solid fa-check-circle text-green-400';
+                }
+
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            },
+
+            openModal: (id) => {
+                const el = document.getElementById(id);
+                el.classList.remove('modal-hidden');
+                el.classList.add('modal-visible');
+                if(id === 'post-modal') setTimeout(() => document.getElementById('post-text').focus(), 100);
+            },
+
+            closeModal: (id) => {
+                const el = document.getElementById(id);
+                el.classList.remove('modal-visible');
+                el.classList.add('modal-hidden');
+            },
+
+            timeSince: (date) => {
+                const seconds = Math.floor((new Date() - date) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + "y";
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + "mo";
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + "d";
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + "h";
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + "m";
+                return "Just now";
+            },
+
+            escapeHtml: (unsafe) => {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            },
+            
+            createFloatingEmojis: (x, y) => {
+                const emojis = ['🔥', '🎭', '✨', '💯', '🤫'];
+                for(let i=0; i<5; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'floating-emoji';
+                    el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                    el.style.left = (x + (Math.random() * 100 - 50)) + 'px';
+                    el.style.top = y + 'px';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 1500);
+                }
+            }
+        };
+
+        // Helper for global access
+        function openSettings() { ui.openModal('settings-modal'); }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', app.init);
+
+    </script>
+</body>
+</html>

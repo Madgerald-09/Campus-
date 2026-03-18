@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Campus Confession Wall</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .confession-card {
+            animation: slideIn 0.5s ease-out;
+            transition: all 0.3s ease;
+        }
+        
+        .confession-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .reaction-btn {
+            transition: all 0.2s;
+        }
+        
+        .reaction-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        .reaction-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .pulse-ring {
+            position: absolute;
+            border-radius: 50%;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.33);
+                opacity: 1;
+            }
+            80%, 100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .dark-mode {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 100%);
+        }
+        
+        .confession-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .confession-input:focus {
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.08);
+            outline: none;
+        }
+        
+        .vote-badge {
+            animation: pop 0.3s ease;
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .truth-meter {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .truth-indicator {
+            position: absolute;
+            top: -4px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: left 0.5s ease;
+        }
+        
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            animation: float 3s ease-out forwards;
+            font-size: 24px;
+            z-index: 1000;
+        }
+        
+        @keyframes float {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+        
+        .countdown {
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .midnight-mode {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+        }
+        
+        .midnight-mode .glass-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="text-white overflow-x-hidden">
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-panel border-b border-white/10">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-xl">
+                    🎭
+                </div>
+                <h1 class="text-xl font-bold hidden sm:block">Confession<span class="gradient-text">Wall</span></h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleMidnightMode()" class="p-2 rounded-full hover:bg-white/10 transition-colors" title="Midnight Secrets Mode">
+                    🌙
+                </button>
+                <button onclick="showRandomConfession()" class="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-sm font-medium hover:shadow-lg transition-all flex items-center space-x-2">
+                    <span>🎲</span>
+                    <span class="hidden sm:inline">Random</span>
+                </button>
+                <button onclick="openPostModal()" class="px-4 py-2 bg-white text-gray-900 rounded-full text-sm font-medium hover:shadow-lg transition-all">
+                    + Confess
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 px-4 max-w-6xl mx-auto">
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="glass-panel rounded-2xl p-4 text-center">
+                <div class="text-2xl font-bold text-purple-400" id="total-confessions">0</div>
+                <div class="text-xs text-gray-400">Confessions</div>
+            </div>
+            <div class="glass-panel rounded-2xl p-4 text-center">
+                <div class="text-2xl font-bold text-pink-400" id="active-now">0</div>
+                <div class="text-xs text-gray-400">Active Now</div>
+            </div>
+            <div class="glass-panel rounded-2xl p-4 text-center">
+                <div class="text-2xl font-bold text-yellow-400" id="trending-count">0</div>
+                <div class="text-xs text-gray-400">Trending</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-2 mb-6 justify-center">
+            <button onclick="filterConfessions('all')" class="filter-btn px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-sm active" data-filter="all">
+                All Confessions
+            </button>
+            <button onclick="filterConfessions('trending')" class="filter-btn px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-sm" data-filter="trending">
+                🔥 Trending
+            </button>
+            <button onclick="filterConfessions('fresh')" class="filter-btn px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-sm" data-filter="fresh">
+                ⏰ Fresh (24h)
+            </button>
+            <button onclick="filterConfessions('crazy')" class="filter-btn px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-sm" data-filter="crazy">
+                🤯 Most Crazy
+            </button>
+        </div>
+
+        <!-- Confession Wall -->
+        <div id="confession-wall" class="space-y-4">
+            <!-- Confessions will be loaded here -->
+        </div>
+
+        <!-- Load More -->
+        <div class="mt-8 text-center">
+            <button onclick="loadMore()" class="px-6 py-3 glass-panel rounded-full hover:bg-white/10 transition-all text-sm">
+                Load More Confessions ↓
+            </button>
+        </div>
+    </main>
+
+    <!-- Post Modal -->
+    <div id="post-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closePostModal()"></div>
+        <div class="absolute inset-x-4 top-24 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[500px] glass-panel rounded-3xl p-6 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Post Anonymous Confession</h2>
+                <button onclick="closePostModal()" class="text-gray-400 hover:text-white">✕</button>
+            </div>
+            
+            <textarea id="confession-text" rows="6" class="w-full confession-input rounded-2xl p-4 text-white placeholder-gray-500 resize-none" placeholder="What's your secret? (max 500 chars)..." maxlength="500"></textarea>
+            
+            <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
+                <span id="char-count">0/500</span>
+                <span>💯 Anonymous & Encrypted</span>
+            </div>
+
+            <!-- Truth Meter Preview -->
+            <div class="mt-4 p-4 bg-black/20 rounded-xl">
+                <div class="flex justify-between text-sm mb-2">
+                    <span>AI Truth Meter</span>
+                    <span id="truth-score" class="text-purple-400">Analyzing...</span>
+                </div>
+                <div class="truth-meter">
+                    <div id="truth-indicator" class="truth-indicator" style="left: 50%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>🧢 Cap</span>
+                    <span>🤔 Real</span>
+                </div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <button onclick="generateRandomConfession()" class="flex-1 py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-sm border border-white/10">
+                    🎲 Auto-Generate
+                </button>
+                <button onclick="submitConfession()" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-medium hover:shadow-lg transition-all">
+                    Post Confession 🔥
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Random Confession Modal -->
+    <div id="random-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="closeRandomModal()"></div>
+        <div class="relative w-full max-w-lg mx-4 glass-panel rounded-3xl p-8 text-center transform transition-all" id="random-card">
+            <div class="text-6xl mb-4 animate-bounce">🎭</div>
+            <h3 class="text-lg text-gray-400 mb-4">Random Confession</h3>
+            <p id="random-text" class="text-xl font-medium mb-6 leading-relaxed"></p>
+            <div id="random-reactions" class="flex justify-center gap-4 mb-6"></div>
+            <button onclick="showRandomConfession()" class="px-6 py-3 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                🎲 Another One
+            </button>
+        </div>
+    </div>
+
+    <!-- Shake Hint -->
+    <div id="shake-hint" class="fixed bottom-4 left-1/2 -translate-x-1/2 glass-panel px-4 py-2 rounded-full text-sm opacity-0 transition-opacity pointer-events-none">
+        🤳 Shake for random confession!
+    </div>
+
+    <script>
+        // Data Store (Simulating Django Backend)
+        let confessions = JSON.parse(localStorage.getItem('confessions')) || [
+            {
+                id: 1,
+                text: "I accidentally called my professor 'mom' in front of 300 students and he responded 'yes dear' 😭",
+                funny: 42,
+                crazy: 15,
+                cap: 3,
+                timestamp: Date.now() - 3600000,
+                trending: true
+            },
+            {
+                id: 2,
+                text: "I've been living in the library for 3 days because I don't want to go home and explain why I dropped out to my parents... I'm still enrolled btw",
+                funny: 8,
+                crazy: 67,
+                cap: 12,
+                timestamp: Date.now() - 7200000,
+                trending: true
+            },
+            {
+                id: 3,
+                text: "I hacked the campus wifi to prioritize my dorm's traffic during finals week. Everyone thinks it's just 'maintenance' 😈",
+                funny: 25,
+                crazy: 89,
+                cap: 5,
+                timestamp: Date.now() - 10800000,
+                trending: false
+            }
+        ];
+
+        let currentFilter = 'all';
+        let midnightMode = false;
+
+        // Random confession starters
+        const confessionStarters = [
+            "I secretly...",
+            "Nobody knows that I...",
+            "I once accidentally...",
+            "My roommate thinks I... but actually I...",
+            "I've been pretending to...",
+            "The truth about the campus legend is...",
+            "I saw something in the library at 3am...",
+            "My professor doesn't know that I..."
+        ];
+
+        const confessionEndings = [
+            "and I've never told anyone until now.",
+            "and I'm terrified of getting caught.",
+            "and it still haunts me to this day.",
+            "and honestly? I'd do it again.",
+            "and that's why I can't sleep at night.",
+            "and my GPA suffered because of it.",
+            "and now I'm $2000 in debt.",
+            "and the RA almost found out."
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderConfessions();
+            updateStats();
+            setupShakeDetection();
+            setupTextAnalysis();
+            
+            // Show shake hint after 3 seconds
+            setTimeout(() => {
+                const hint = document.getElementById('shake-hint');
+                hint.style.opacity = '1';
+                setTimeout(() => hint.style.opacity = '0', 5000);
+            }, 3000);
+        });
+
+        function renderConfessions() {
+            const wall = document.getElementById('confession-wall');
+            wall.innerHTML = '';
+            
+            let filtered = [...confessions];
+            
+            if (currentFilter === 'trending') {
+                filtered = filtered.filter(c => c.trending);
+            } else if (currentFilter === 'fresh') {
+                const dayAgo = Date.now() - 86400000;
+                filtered = filtered.filter(c => c.timestamp > dayAgo);
+            } else if (currentFilter === 'crazy') {
+                filtered.sort((a, b) => b.crazy - a.crazy);
+            }
+            
+            filtered.forEach(confession => {
+                const card = createConfessionCard(confession);
+                wall.appendChild(card);
+            });
+        }
+
+        function createConfessionCard(confession) {
+            const div = document.createElement('div');
+            div.className = 'confession-card glass-panel rounded-2xl p-6 relative overflow-hidden';
+            
+            const timeLeft = Math.max(0, 86400000 - (Date.now() - confession.timestamp));
+            const hoursLeft = Math.floor(timeLeft / 3600000);
+            const minutesLeft = Math.floor((timeLeft % 3600000) / 60000);
+            
+            const isFresh = timeLeft > 0;
+            const total = confession.funny + confession.crazy + confession.cap;
+            const truthScore = total > 0 ? Math.round((confession.crazy / total) * 100) : 50;
+            
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center text-xs">
+                            👤
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400">Anonymous</div>
+                            <div class="text-xs text-gray-500">${formatTime(confession.timestamp)}</div>
+                        </div>
+                    </div>
+                    ${confession.trending ? '<span class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">🔥 Trending</span>' : ''}
+                    ${isFresh ? `<span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full countdown">⏰ ${hoursLeft}h ${minutesLeft}m</span>` : '<span class="text-xs bg-gray-700/50 text-gray-500 px-2 py-1 rounded-full">Expired</span>'}
+                </div>
+                
+                <p class="text-lg leading-relaxed mb-4 text-gray-100">${escapeHtml(confession.text)}</p>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>Truth Meter</span>
+                        <span>${truthScore > 60 ? '🤔 Likely Real' : truthScore < 40 ? '🧢 Probably Cap' : '😐 Unclear'}</span>
+                    </div>
+                    <div class="truth-meter h-2">
+                        <div class="truth-indicator" style="left: ${truthScore}%"></div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                    <div class="flex space-x-4">
+                        <button onclick="react(${confession.id}, 'funny')" class="reaction-btn flex items-center space-x-1 text-sm text-gray-400 hover:text-yellow-400">
+                            <span class="text-xl">😂</span>
+                            <span class="vote-badge">${confession.funny}</span>
+                        </button>
+                        <button onclick="react(${confession.id}, 'crazy')" class="reaction-btn flex items-center space-x-1 text-sm text-gray-400 hover:text-purple-400">
+                            <span class="text-xl">🤯</span>
+                            <span class="vote-badge">${confession.crazy}</span>
+                        </button>
+                        <button onclick="react(${confession.id}, 'cap')" class="reaction-btn flex items-center space-x-1 text-sm text-gray-400 hover:text-red-400">
+                            <span class="text-xl">🧢</span>
+                            <span class="vote-badge">${confession.cap}</span>
+                        </button>
+                    </div>
+                    <button onclick="shareConfession(${confession.id})" class="text-gray-500 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                    </button>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function submitConfession() {
+            const text = document.getElementById('confession-text').value.trim();
+            if (!text || text.length < 10) {
+                alert('Confession too short! Need at least 10 characters.');
+                return;
+            }
+            
+            const newConfession = {
+                id: Date.now(),
+                text: text,
+                funny: 0,
+                crazy: 0,
+                cap: 0,
+                timestamp: Date.now(),
+                trending: false
+            };
+            
+            confessions.unshift(newConfession);
+            localStorage.setItem('confessions', JSON.stringify(confessions));
+            
+            // Create floating emojis
+            createFloatingEmojis(['🎭', '🔥', '💯'], window.innerWidth / 2, window.innerHeight / 2);
+            
+            closePostModal();
+            renderConfessions();
+            updateStats();
+            
+            // Reset form
+            document.getElementById('confession-text').value = '';
+            document.getElementById('char-count').textContent = '0/500';
+        }
+
+        function react(id, type) {
+            const confession = confessions.find(c => c.id === id);
+            if (confession) {
+                confession[type]++;
+                
+                // Make trending if gets enough reactions
+                const total = confession.funny + confession.crazy + confession.cap;
+                if (total > 20 && !confession.trending) {
+                    confession.trending = true;
+                    createFloatingEmojis(['🔥'], window.innerWidth / 2, window.innerHeight / 2);
+                }
+                
+                localStorage.setItem('confessions', JSON.stringify(confessions));
+                renderConfessions();
+                updateStats();
+                
+                // Visual feedback
+                const btn = event.currentTarget;
+                btn.classList.add('scale-125');
+                setTimeout(() => btn.classList.remove('scale-125'), 200);
+            }
+        }
+
+        function generateRandomConfession() {
+            const starter = confessionStarters[Math.floor(Math.random() * confessionStarters.length)];
+            const ending = confessionEndings[Math.floor(Math.random() * confessionEndings.length)];
+            const middle = [
+                " ate an entire pizza meant for the study group ",
+                " replaced my roommate's shampoo with mayonnaise ",
+                " has been attending the wrong lecture for 3 weeks ",
+                " accidentally emailed the dean a meme ",
+                " been using the chemistry lab to make coffee ",
+                " convinced the entire floor that the building is haunted ",
+                " been charging my devices in the professor's office after hours "
+            ][Math.floor(Math.random() * middle.length)];
+            
+            const text = starter + middle + ending;
+            document.getElementById('confession-text').value = text;
+            document.getElementById('char-count').textContent = text.length + '/500';
+            analyzeTruth(text);
+        }
+
+        function showRandomConfession() {
+            if (confessions.length === 0) return;
+            
+            const random = confessions[Math.floor(Math.random() * confessions.length)];
+            document.getElementById('random-text').textContent = random.text;
+            
+            const reactionsDiv = document.getElementById('random-reactions');
+            reactionsDiv.innerHTML = `
+                <button onclick="react(${random.id}, 'funny'); closeRandomModal()" class="text-3xl hover:scale-125 transition-transform">😂 ${random.funny}</button>
+                <button onclick="react(${random.id}, 'crazy'); closeRandomModal()" class="text-3xl hover:scale-125 transition-transform">🤯 ${random.crazy}</button>
+                <button onclick="react(${random.id}, 'cap'); closeRandomModal()" class="text-3xl hover:scale-125 transition-transform">🧢 ${random.cap}</button>
+            `;
+            
+            document.getElementById('random-modal').classList.remove('hidden');
+            
+            // Shake animation
+            const card = document.getElementById('random-card');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 500);
+        }
+
+        function setupShakeDetection() {
+            let lastX = 0, lastY = 0, lastZ = 0;
+            let shakeThreshold = 15;
+            
+            if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', (e) => {
+                    const { accelerationIncludingGravity } = e;
+                    if (!accelerationIncludingGravity) return;
+                    
+                    const { x, y, z } = accelerationIncludingGravity;
+                    const deltaX = Math.abs(x - lastX);
+                    const deltaY = Math.abs(y - lastY);
+                    const deltaZ = Math.abs(z - lastZ);
+                    
+                    if (deltaX + deltaY + deltaZ > shakeThreshold) {
+                        showRandomConfession();
+                    }
+                    
+                    lastX = x;
+                    lastY = y;
+                    lastZ = z;
+                });
+            }
+        }
+
+        function setupTextAnalysis() {
+            const textarea = document.getElementById('confession-text');
+            textarea.addEventListener('input', (e) => {
+                const len = e.target.value.length;
+                document.getElementById('char-count').textContent = len + '/500';
+                analyzeTruth(e.target.value);
+            });
+        }
+
+        function analyzeTruth(text) {
+            // Simple "AI" analysis based on keywords
+            const realIndicators = ['accidentally', 'secretly', 'nobody knows', 'terrified', 'haunts me', 'anxiety', 'debt', 'parents'];
+            const capIndicators = ['everyone', 'literally', 'totally', 'obviously', '100%', 'definitely', 'swear'];
+            
+            let realScore = 0;
+            let capScore = 0;
+            
+            realIndicators.forEach(word => {
+                if (text.toLowerCase().includes(word)) realScore++;
+            });
+            
+            capIndicators.forEach(word => {
+                if (text.toLowerCase().includes(word)) capScore++;
+            });
+            
+            const total = realScore + capScore || 1;
+            const truthPercent = Math.round((realScore / total) * 100);
+            
+            document.getElementById('truth-indicator').style.left = truthPercent + '%';
+            document.getElementById('truth-score').textContent = truthPercent > 60 ? '🤔 Likely Real' : truthPercent < 40 ? '🧢 Probably Cap' : '😐 Analyzing...';
+        }
+
+        function toggleMidnightMode() {
+            midnightMode = !midnightMode;
+            document.body.classList.toggle('midnight-mode');
+            
+            if (midnightMode) {
+                createFloatingEmojis(['🌙', '⭐', '🌌'], window.innerWidth / 2, 100);
+            }
+        }
+
+        function filterConfessions(type) {
+            currentFilter = type;
+            
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === type) {
+                    btn.classList.add('bg-white', 'text-gray-900');
+                    btn.classList.remove('bg-white/10');
+                } else {
+                    btn.classList.remove('bg-white', 'text-gray-900');
+                    btn.classList.add('bg-white/10');
+                }
+            });
+            
+            renderConfessions();
+        }
+
+        function updateStats() {
+            document.getElementById('total-confessions').textContent = confessions.length;
+            document.getElementById('active-now').textContent = Math.floor(Math.random() * 50) + 10;
+            document.getElementById('trending-count').textContent = confessions.filter(c => c.trending).length;
+        }
+
+        function createFloatingEmojis(emojis, x, y) {
+            emojis.forEach((emoji, i) => {
+                setTimeout(() => {
+                    const el = document.createElement('div');
+                    el.className = 'floating-emoji';
+                    el.textContent = emoji;
+                    el.style.left = x + (Math.random() * 100 - 50) + 'px';
+                    el.style.top = y + 'px';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 3000);
+                }, i * 100);
+            });
+        }
+
+        function formatTime(timestamp) {
+            const diff = Date.now() - timestamp;
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            
+            if (hours > 24) return Math.floor(hours / 24) + 'd ago';
+            if (hours > 0) return hours + 'h ago';
+            return minutes + 'm ago';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function openPostModal() {
+            document.getElementById('post-modal').classList.remove('hidden');
+            document.getElementById('confession-text').focus();
+        }
+
+        function closePostModal() {
+            document.getElementById('post-modal').classList.add('hidden');
+        }
+
+        function closeRandomModal() {
+            document.getElementById('random-modal').classList.add('hidden');
+        }
+
+        function shareConfession(id) {
+            const confession = confessions.find(c => c.id === id);
+            if (confession) {
+                const text = `🔥 Anonymous Confession: "${confession.text.substring(0, 100)}..."\n\nVote: 😂${confession.funny} 🤯${confession.crazy} 🧢${confession.cap}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Confession copied to clipboard!');
+                });
+            }
+        }
+
+        function loadMore() {
+            // Simulate loading more
+            const btn = event.target;
+            btn.textContent = 'Loading...';
+            setTimeout(() => {
+                btn.textContent = 'Load More Confessions ↓';
+                // In real app, this would fetch from API
+            }, 1000);
+        }
+
+        // Cleanup expired confessions periodically
+        setInterval(() => {
+            const dayAgo = Date.now() - 86400000;
+            confessions = confessions.filter(c => c.timestamp > dayAgo || c.trending);
+            localStorage.setItem('confessions', JSON.stringify(confessions));
+            renderConfessions();
+        }, 60000); // Check every minute
+    </script>
+</body>
+</html>

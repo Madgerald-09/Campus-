@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConfessionWall - Global Anonymous Social Network</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f23;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .post-card {
+            animation: slideUp 0.6s ease-out;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .post-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .like-anim {
+            animation: likeBurst 0.4s ease;
+        }
+        
+        @keyframes likeBurst {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        .floating-hearts {
+            position: fixed;
+            pointer-events: none;
+            animation: floatHeart 4s ease-out forwards;
+            z-index: 9999;
+        }
+        
+        @keyframes floatHeart {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100vh) scale(0.5) rotate(360deg);
+            }
+        }
+        
+        .typing-indicator span {
+            animation: blink 1.4s infinite both;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        .trending-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        
+        .scroll-hidden::-webkit-scrollbar { display: none; }
+        .scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .comment-slide {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .online-dot {
+            animation: onlinePulse 2s infinite;
+        }
+        
+        @keyframes onlinePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .hashtag {
+            color: #60a5fa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .hashtag:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+        
+        .reaction-bar {
+            transition: all 0.3s ease;
+        }
+        
+        .reaction-btn.active {
+            transform: scale(1.1);
+        }
+        
+        .reaction-btn.active .emoji {
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+        
+        .story-ring {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            padding: 3px;
+            border-radius: 50%;
+        }
+        
+        .live-badge {
+            background: linear-gradient(90deg, #ff0040 0%, #ff8000 100%);
+            animation: livePulse 1.5s infinite;
+        }
+        
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .modal-enter {
+            animation: modalIn 0.3s ease-out;
+        }
+        
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        .notification-toast {
+            animation: toastSlide 0.4s ease-out;
+        }
+        
+        @keyframes toastSlide {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-panel border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center text-xl shadow-lg">
+                    <i class="fas fa-mask"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Confession<span class="text-purple-400">Wall</span></h1>
+                    <p class="text-xs text-gray-400 flex items-center gap-1">
+                        <span class="w-2 h-2 bg-green-500 rounded-full online-dot"></span>
+                        <span id="global-users">12,847 online</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button onclick="showNotifications()" class="relative p-2 hover:bg-white/10 rounded-full transition-colors">
+                    <i class="fas fa-bell text-lg"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <button onclick="openPostModal()" class="hidden sm:flex items-center space-x-2 px-5 py-2.5 gradient-bg rounded-full font-medium hover:shadow-lg hover:shadow-purple-500/30 transition-all transform hover:scale-105">
+                    <i class="fas fa-plus"></i>
+                    <span>Confess</span>
+                </button>
+                <button onclick="openPostModal()" class="sm:hidden w-10 h-10 gradient-bg rounded-full flex items-center justify-center">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Layout -->
+    <div class="pt-20 pb-24 max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Sidebar -->
+        <aside class="hidden lg:block lg:col-span-3 space-y-4 sticky top-24 h-fit">
+            <div class="glass-panel rounded-2xl p-5 space-y-4">
+                <div class="flex items-center space-x-3 pb-4 border-b border-white/10">
+                    <div class="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center text-2xl">
+                        🎭
+                    </div>
+                    <div>
+                        <div class="font-semibold">Anonymous User</div>
+                        <div class="text-xs text-gray-400">ID: #<span id="user-id">XXXX</span></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-white/5">
+                        <div class="font-bold text-lg" id="my-posts">0</div>
+                        <div class="text-xs text-gray-400">Posts</div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white/5">
+                        <div class="font-bold text-lg text-purple-400" id="my-likes">0</div>
+                        <div class="text-xs text-gray-400">Likes</div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white/5">
+                        <div class="font-bold text-lg text-pink-400" id="my-comments">0</div>
+                        <div class="text-xs text-gray-400">Comments</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-fire text-orange-500"></i>
+                    Trending Topics
+                </h3>
+                <div class="space-y-3" id="trending-topics">
+                    <!-- Dynamic topics -->
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-globe text-blue-400"></i>
+                    Live Activity
+                </h3>
+                <div class="space-y-3 text-sm" id="live-activity">
+                    <div class="flex items-center gap-3 text-gray-400">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span>Someone just posted</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Feed -->
+        <main class="lg:col-span-6 space-y-4">
+            <!-- Stories/Highlights -->
+            <div class="flex space-x-4 overflow-x-auto scroll-hidden pb-2">
+                <div class="flex-shrink-0 text-center space-y-1 cursor-pointer" onclick="openPostModal()">
+                    <div class="w-16 h-16 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center hover:border-purple-400 transition-colors">
+                        <i class="fas fa-plus text-white/50"></i>
+                    </div>
+                    <span class="text-xs text-gray-400">Add</span>
+                </div>
+                <div class="flex-shrink-0 text-center space-y-1 cursor-pointer" onclick="showRandomConfession()">
+                    <div class="story-ring">
+                        <div class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-2xl">
+                            🎲
+                        </div>
+                    </div>
+                    <span class="text-xs">Random</span>
+                </div>
+                <div class="flex-shrink-0 text-center space-y-1 cursor-pointer">
+                    <div class="story-ring">
+                        <div class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-2xl relative">
+                            🔥
+                            <span class="absolute -top-1 -right-1 w-4 h-4 live-badge rounded-full text-[8px] flex items-center justify-center">LIVE</span>
+                        </div>
+                    </div>
+                    <span class="text-xs">Hot Now</span>
+                </div>
+                <div class="flex-shrink-0 text-center space-y-1 cursor-pointer">
+                    <div class="story-ring">
+                        <div class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-2xl">
+                            😂
+                        </div>
+                    </div>
+                    <span class="text-xs">Funny</span>
+                </div>
+                <div class="flex-shrink-0 text-center space-y-1 cursor-pointer">
+                    <div class="story-ring">
+                        <div class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-2xl">
+                            💔
+                        </div>
+                    </div>
+                    <span class="text-xs">Heartbreak</span>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex gap-2 overflow-x-auto scroll-hidden pb-2">
+                <button onclick="filterPosts('all')" class="filter-btn px-4 py-2 rounded-full bg-white text-gray-900 font-medium text-sm whitespace-nowrap transition-all" data-filter="all">
+                    🌍 Global
+                </button>
+                <button onclick="filterPosts('trending')" class="filter-btn px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-medium text-sm whitespace-nowrap transition-all" data-filter="trending">
+                    🔥 Trending
+                </button>
+                <button onclick="filterPosts('fresh')" class="filter-btn px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-medium text-sm whitespace-nowrap transition-all" data-filter="fresh">
+                    ⚡ Fresh
+                </button>
+                <button onclick="filterPosts('popular')" class="filter-btn px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 font-medium text-sm whitespace-nowrap transition-all" data-filter="popular">
+                    ⭐ Popular
+                </button>
+            </div>
+
+            <!-- Create Post Mini -->
+            <div class="glass-panel rounded-2xl p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center">
+                            🎭
+                        </div>
+                        <input type="text" name="text" placeholder="What's on your mind? Share anonymously..." class="flex-1 bg-white/5 rounded-full px-4 py-2.5 text-white text-sm focus:outline-none focus:bg-white/10" required>
+                        <button type="submit" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+                            <i class="fas fa-paper-plane text-purple-400"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Feed -->
+            <div id="feed" class="space-y-4">
+                {% for confession in confessions %}
+                <div class="post-card glass-panel rounded-2xl p-5">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-xl shadow-lg">
+                                🎭
+                            </div>
+                            <div>
+                                <div class="font-semibold text-sm">Anonymous</div>
+                                <div class="text-xs text-gray-400 flex items-center gap-2">
+                                    <span>{{ confession.created_at|date:"M j, H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 text-base leading-relaxed text-gray-100">
+                        {{ confession.text }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Load More -->
+            <div class="text-center pt-4">
+                <button onclick="loadMore()" class="px-8 py-3 glass-panel rounded-full hover:bg-white/10 transition-all text-sm font-medium">
+                    <i class="fas fa-spinner fa-spin mr-2 hidden" id="load-spinner"></i>
+                    Load More
+                </button>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="hidden lg:block lg:col-span-3 space-y-4 sticky top-24 h-fit">
+            <div class="glass-panel rounded-2xl p-5">
+                <h3 class="font-semibold mb-4">Top Contributors</h3>
+                <div class="space-y-3" id="top-users">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-line text-green-400"></i>
+                    Stats
+                </h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Total Confessions</span>
+                        <span class="font-semibold" id="total-count">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Today</span>
+                        <span class="font-semibold text-purple-400" id="today-count">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Reactions</span>
+                        <span class="font-semibold text-pink-400" id="reaction-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-4 text-center text-xs text-gray-500">
+                <p>© 2026 ConfessionWall</p>
+                <p class="mt-1">Anonymous • Global • Real-time</p>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="fixed bottom-0 w-full z-50 glass-panel border-t border-white/10 lg:hidden">
+        <div class="flex justify-around items-center py-3">
+            <button onclick="filterPosts('all')" class="p-2 text-purple-400">
+                <i class="fas fa-home text-xl"></i>
+            </button>
+            <button onclick="filterPosts('trending')" class="p-2 text-gray-400 hover:text-white">
+                <i class="fas fa-fire text-xl"></i>
+            </button>
+            <button onclick="openPostModal()" class="p-2 -mt-8">
+                <div class="w-14 h-14 gradient-bg rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <i class="fas fa-plus text-xl"></i>
+                </div>
+            </button>
+            <button onclick="showRandomConfession()" class="p-2 text-gray-400 hover:text-white">
+                <i class="fas fa-dice text-xl"></i>
+            </button>
+            <button onclick="showNotifications()" class="p-2 text-gray-400 hover:text-white relative">
+                <i class="fas fa-bell text-xl"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Post Modal -->
+    <div id="post-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" onclick="closePostModal()"></div>
+        <div class="absolute inset-x-4 top-20 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[600px] glass-panel rounded-3xl p-6 max-h-[85vh] overflow-y-auto modal-enter">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fas fa-pen-fancy text-purple-400"></i>
+                    Create Confession
+                </h2>
+                <button onclick="closePostModal()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="relative">
+                    <textarea id="post-content" rows="5" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-500 resize-none focus:outline-none focus:border-purple-500 transition-colors" placeholder="Share your thoughts anonymously... What's on your mind? #confession #secret" maxlength="1000"></textarea>
+                    <div class="absolute bottom-3 right-3 text-xs text-gray-500">
+                        <span id="char-count">0</span>/1000
+                    </div>
+                </div>
+
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                    <button onclick="addTag('confession')" class="px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-400 text-sm hover:bg-blue-500/30 transition-colors">#confession</button>
+                    <button onclick="addTag('secret')" class="px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-400 text-sm hover:bg-purple-500/30 transition-colors">#secret</button>
+                    <button onclick="addTag('heartbreak')" class="px-3 py-1.5 rounded-full bg-red-500/20 text-red-400 text-sm hover:bg-red-500/30 transition-colors">#heartbreak</button>
+                    <button onclick="addTag('funny')" class="px-3 py-1.5 rounded-full bg-yellow-500/20 text-yellow-400 text-sm hover:bg-yellow-500/30 transition-colors">#funny</button>
+                    <button onclick="addTag('campus')" class="px-3 py-1.5 rounded-full bg-green-500/20 text-green-400 text-sm hover:bg-green-500/30 transition-colors">#campus</button>
+                </div>
+
+                <div class="glass-panel rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-400">AI Mood Detection</span>
+                        <span id="mood-indicator" class="text-sm font-medium">😐 Neutral</span>
+                    </div>
+                    <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div id="mood-bar" class="h-full bg-gray-500 transition-all duration-500" style="width: 50%"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                    <i class="fas fa-shield-alt text-gray-400"></i>
+                    <span class="text-sm text-gray-400">Posting anonymously</span>
+                    <label class="ml-auto flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="allow-comments" checked class="w-4 h-4 rounded accent-purple-500">
+                        <span class="text-sm">Allow comments</span>
+                    </label>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="generateRandomConfession()" class="flex-1 py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-sm border border-white/10 flex items-center justify-center gap-2">
+                        <i class="fas fa-dice"></i>
+                        Random Idea
+                    </button>
+                    <button onclick="submitPost()" class="flex-[2] py-3 gradient-bg rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/30 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i>
+                        Post Anonymously
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Modal -->
+    <div id="comments-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" onclick="closeCommentsModal()"></div>
+        <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center pointer-events-none">
+            <div class="w-full md:w-[600px] md:h-[80vh] glass-panel md:rounded-3xl rounded-t-3xl p-6 flex flex-col pointer-events-auto modal-enter">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-white/10">
+                    <h3 class="font-bold flex items-center gap-2">
+                        <i class="fas fa-comments text-purple-400"></i>
+                        Comments <span id="comment-count" class="text-sm text-gray-400">(0)</span>
+                    </h3>
+                    <button onclick="closeCommentsModal()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="comments-list" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                    <!-- Comments rendered here -->
+                </div>
+
+                <div class="border-t border-white/10 pt-4">
+                    <div class="flex gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            🎭
+                        </div>
+                        <div class="flex-1 relative">
+                            <input type="text" id="comment-input" class="w-full bg-white/5 border border-white/10 rounded-full px-4 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors" placeholder="Add a comment..." onkeypress="if(event.key==='Enter')submitComment()">
+                            <button onclick="submitComment()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 gradient-bg rounded-full flex items-center justify-center text-sm hover:scale-110 transition-transform">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Random Confession Modal -->
+    <div id="random-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-md" onclick="closeRandomModal()"></div>
+        <div class="relative w-full max-w-lg glass-panel rounded-3xl p-8 text-center modal-enter">
+            <div class="w-20 h-20 mx-auto mb-6 gradient-bg rounded-full flex items-center justify-center text-4xl animate-bounce">
+                🎲
+            </div>
+            <h3 class="text-lg text-gray-400 mb-4">Random Confession from Global Community</h3>
+            <p id="random-text" class="text-xl font-medium mb-6 leading-relaxed text-white/90"></p>
+            
+            <div id="random-stats" class="flex justify-center gap-6 mb-6 text-sm text-gray-400">
+                <!-- Stats -->
+            </div>
+
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeRandomModal()" class="px-6 py-3 bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                    Close
+                </button>
+                <button onclick="showRandomConfession()" class="px-6 py-3 gradient-bg rounded-full hover:shadow-lg transition-all flex items-center gap-2">
+                    <i class="fas fa-random"></i>
+                    Next Random
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed top-24 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        // Data Store - Simulating Backend with LocalStorage persistence
+        let posts = JSON.parse(localStorage.getItem('confession_posts')) || generateSamplePosts();
+        let currentUser = {
+            id: 'anon_' + Math.random().toString(36).substr(2, 9),
+            posts: 0,
+            likes: 0,
+            comments: 0
+        };
+        let currentFilter = 'all';
+        let currentPostId = null;
+        let userReactions = JSON.parse(localStorage.getItem('user_reactions')) || {};
+
+        // Sample data generator
+        function generateSamplePosts() {
+            const samples = [
+                {
+                    id: Date.now() - 100000,
+                    content: "I accidentally sent my crush a meme about having a crush on someone... while sitting right next to them in the library. They looked at me, smiled, and whispered 'I know' 😭💀 #campus #embarrassing",
+                    likes: 342,
+                    comments: [
+                        { id: 1, content: "NO WAY 😂", timestamp: Date.now() - 50000, likes: 12 },
+                        { id: 2, content: "This is cinema 🎬", timestamp: Date.now() - 40000, likes: 8 }
+                    ],
+                    shares: 45,
+                    timestamp: Date.now() - 3600000,
+                    mood: "embarrassed",
+                    tags: ["campus", "embarrassing"],
+                    trending: true
+                },
+                {
+                    id: Date.now() - 200000,
+                    content: "I've been pretending to be an international student for 3 months because I was too shy to correct my roommate when she assumed I was from France. I'm from Ohio. I can't keep up the accent anymore help #secret #funny",
+                    likes: 892,
+                    comments: [],
+                    shares: 234,
+                    timestamp: Date.now() - 7200000,
+                    mood: "anxious",
+                    tags: ["secret", "funny"],
+                    trending: true
+                },
+                {
+                    id: Date.now() - 300000,
+                    content: "Sometimes I sit in the bathroom stall just to get a break from people. It's been 45 minutes. Send snacks. #confession #tired",
+                    likes: 156,
+                    comments: [{ id: 3, content: "Relatable king/queen 👑", timestamp: Date.now() - 100000, likes: 5 }],
+                    shares: 12,
+                    timestamp: Date.now() - 10800000,
+                    mood: "tired",
+                    tags: ["confession", "tired"],
+                    trending: false
+                },
+                {
+                    id: Date.now() - 400000,
+                    content: "I hacked the campus WiFi to prioritize Netflix during finals week. Everyone thinks it's just 'network maintenance'. I'm the hero they don't deserve 😈 #confession #campus",
+                    likes: 2341,
+                    comments: [
+                        { id: 4, content: "Legend", timestamp: Date.now() - 200000, likes: 45 },
+                        { id: 5, content: "Doing God's work 🙏", timestamp: Date.now() - 180000, likes: 32 },
+                        { id: 6, content: "Which campus? Asking for a friend", timestamp: Date.now() - 150000, likes: 28 }
+                    ],
+                    shares: 567,
+                    timestamp: Date.now() - 14400000,
+                    mood: "mischievous",
+                    tags: ["confession", "campus"],
+                    trending: true
+                },
+                {
+                    id: Date.now() - 500000,
+                    content: "My professor doesn't know I've been attending his lectures for 2 years and I'm not even enrolled in his class. I just really like his teaching style. He's my comfort professor #wholesome #confession",
+                    likes: 445,
+                    comments: [],
+                    shares: 89,
+                    timestamp: Date.now() - 18000000,
+                    mood: "wholesome",
+                    tags: ["wholesome", "confession"],
+                    trending: false
+                }
+            ];
+            localStorage.setItem('confession_posts', JSON.stringify(samples));
+            return samples;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('user-id').textContent = currentUser.id.substr(-4).toUpperCase();
+            renderFeed();
+            updateStats();
+            updateTrendingTopics();
+            startLiveActivity();
+            setupMoodDetection();
+            
+            // Simulate real-time updates
+            setInterval(() => {
+                updateOnlineCount();
+                simulateNewActivity();
+            }, 5000);
+        });
+
+        function renderFeed() {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '';
+            
+            let filtered = [...posts];
+            
+            if (currentFilter === 'trending') {
+                filtered = filtered.filter(p => p.trending || p.likes > 500);
+            } else if (currentFilter === 'fresh') {
+                filtered = filtered.filter(p => Date.now() - p.timestamp < 86400000);
+            } else if (currentFilter === 'popular') {
+                filtered.sort((a, b) => b.likes - a.likes);
+            }
+            
+            filtered.forEach(post => {
+                feed.appendChild(createPostElement(post));
+            });
+        }
+
+        function createPostElement(post) {
+            const div = document.createElement('div');
+            div.className = 'post-card glass-panel rounded-2xl p-5';
+            div.id = `post-${post.id}`;
+            
+            const timeAgo = formatTimeAgo(post.timestamp);
+            const hasLiked = userReactions[post.id]?.liked;
+            
+            // Format content with hashtags
+            let formattedContent = post.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="filterByTag(\'$1\')">#$1</span>');
+            
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-xl shadow-lg">
+                            ${getMoodEmoji(post.mood)}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-sm">Anonymous</div>
+                            <div class="text-xs text-gray-400 flex items-center gap-2">
+                                <span>${timeAgo}</span>
+                                ${post.trending ? '<span class="text-red-400 flex items-center gap-1"><i class="fas fa-fire text-xs"></i> Trending</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="showPostOptions(${post.id})" class="text-gray-400 hover:text-white p-2">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-4 text-base leading-relaxed text-gray-100">
+                    ${formattedContent}
+                </div>
+                
+                ${post.tags ? `
+                <div class="flex flex-wrap gap-2 mb-4">
+                    ${post.tags.map(tag => `<span class="text-xs px-2 py-1 rounded-full bg-white/10 text-gray-400">#${tag}</span>`).join('')}
+                </div>
+                ` : ''}
+                
+                <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                    <div class="flex items-center gap-6">
+                        <button onclick="toggleLike(${post.id})" class="flex items-center gap-2 text-sm ${hasLiked ? 'text-red-400' : 'text-gray-400 hover:text-red-400'} transition-colors group">
+                            <div class="relative">
+                                <i class="${hasLiked ? 'fas' : 'far'} fa-heart text-xl group-hover:scale-110 transition-transform ${hasLiked ? 'like-anim' : ''}"></i>
+                                ${hasLiked ? '<div class="absolute inset-0 bg-red-500 blur-lg opacity-50"></div>' : ''}
+                            </div>
+                            <span class="font-medium">${formatNumber(post.likes)}</span>
+                        </button>
+                        
+                        <button onclick="openComments(${post.id})" class="flex items-center gap-2 text-sm text-gray-400 hover:text-blue-400 transition-colors">
+                            <i class="far fa-comment text-xl"></i>
+                            <span class="font-medium">${post.comments.length}</span>
+                        </button>
+                        
+                        <button onclick="sharePost(${post.id})" class="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
+                            <i class="far fa-share-square text-xl"></i>
+                            <span class="font-medium">${formatNumber(post.shares)}</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="quickReact(${post.id}, '🔥')" class="text-lg hover:scale-125 transition-transform" title="Fire">🔥</button>
+                        <button onclick="quickReact(${post.id}, '💀')" class="text-lg hover:scale-125 transition-transform" title="Dead">💀</button>
+                        <button onclick="quickReact(${post.id}, '💯')" class="text-lg hover:scale-125 transition-transform" title="100">💯</button>
+                    </div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function submitPost() {
+            const content = document.getElementById('post-content').value.trim();
+            if (!content || content.length < 5) {
+                showToast('Post must be at least 5 characters!', 'error');
+                return;
+            }
+            
+            const allowComments = document.getElementById('allow-comments').checked;
+            
+            const newPost = {
+                id: Date.now(),
+                content: content,
+                likes: 0,
+                comments: allowComments ? [] : null,
+                shares: 0,
+                timestamp: Date.now(),
+                mood: detectMood(content),
+                tags: extractTags(content),
+                trending: false
+            };
+            
+            posts.unshift(newPost);
+            localStorage.setItem('confession_posts', JSON.stringify(posts));
+            
+            currentUser.posts++;
+            updateUserStats();
+            
+            // Effects
+            createFloatingHearts();
+            showToast('Confession posted anonymously! 🎭', 'success');
+            
+            closePostModal();
+            renderFeed();
+            updateStats();
+            updateTrendingTopics();
+            
+            // Reset form
+            document.getElementById('post-content').value = '';
+            document.getElementById('char-count').textContent = '0';
+        }
+
+        function toggleLike(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            if (!userReactions[postId]) userReactions[postId] = {};
+            
+            if (userReactions[postId].liked) {
+                post.likes--;
+                userReactions[postId].liked = false;
+            } else {
+                post.likes++;
+                userReactions[postId].liked = true;
+                createHeartBurst(event.clientX, event.clientY);
+                
+                // Check if trending
+                if (post.likes > 100 && !post.trending) {
+                    post.trending = true;
+                    showToast('🔥 This confession is now trending!', 'info');
+                }
+            }
+            
+            localStorage.setItem('confession_posts', JSON.stringify(posts));
+            localStorage.setItem('user_reactions', JSON.stringify(userReactions));
+            
+            // Update UI without full re-render
+            const btn = event.currentTarget;
+            const icon = btn.querySelector('i');
+            const count = btn.querySelector('span');
+            
+            if (userReactions[postId].liked) {
+                btn.classList.remove('text-gray-400');
+                btn.classList.add('text-red-400');
+                icon.classList.remove('far');
+                icon.classList.add('fas', 'like-anim');
+            } else {
+                btn.classList.add('text-gray-400');
+                btn.classList.remove('text-red-400');
+                icon.classList.remove('fas', 'like-anim');
+                icon.classList.add('far');
+            }
+            count.textContent = formatNumber(post.likes);
+            
+            currentUser.likes += userReactions[postId].liked ? 1 : -1;
+            updateUserStats();
+        }
+
+        function openComments(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            if (post.comments === null) {
+                showToast('Comments are disabled for this post', 'error');
+                return;
+            }
+            
+            currentPostId = postId;
+            document.getElementById('comments-modal').classList.remove('hidden');
+            document.getElementById('comment-count').textContent = `(${post.comments.length})`;
+            renderComments(post.comments);
+            
+            setTimeout(() => document.getElementById('comment-input').focus(), 100);
+        }
+
+        function renderComments(comments) {
+            const list = document.getElementById('comments-list');
+            list.innerHTML = '';
+            
+            if (comments.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="far fa-comments text-4xl mb-3 opacity-50"></i>
+                        <p>No comments yet. Be the first to share your thoughts!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            comments.forEach(comment => {
+                const div = document.createElement('div');
+                div.className = 'comment-slide flex gap-3';
+                div.innerHTML = `
+                    <div class="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0 text-sm">
+                        🎭
+                    </div>
+                    <div class="flex-1">
+                        <div class="glass-panel rounded-2xl rounded-tl-none p-3">
+                            <div class="text-xs text-gray-400 mb-1">Anonymous • ${formatTimeAgo(comment.timestamp)}</div>
+                            <div class="text-sm">${escapeHtml(comment.content)}</div>
+                        </div>
+                        <div class="flex items-center gap-4 mt-1 ml-2 text-xs text-gray-400">
+                            <button onclick="likeComment(${comment.id})" class="hover:text-white transition-colors">
+                                <i class="far fa-heart"></i> ${comment.likes || 0}
+                            </button>
+                            <button class="hover:text-white transition-colors">Reply</button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function submitComment() {
+            const input = document.getElementById('comment-input');
+            const content = input.value.trim();
+            if (!content) return;
+            
+            const post = posts.find(p => p.id === currentPostId);
+            if (!post) return;
+            
+            const comment = {
+                id: Date.now(),
+                content: content,
+                timestamp: Date.now(),
+                likes: 0
+            };
+            
+            post.comments.push(comment);
+            localStorage.setItem('confession_posts', JSON.stringify(posts));
+            
+            input.value = '';
+            renderComments(post.comments);
+            document.getElementById('comment-count').textContent = `(${post.comments.length})`;
+            
+            currentUser.comments++;
+            updateUserStats();
+            
+            // Update comment count in feed
+            renderFeed();
+        }
+
+        function quickReact(postId, emoji) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            // Create floating emoji
+            const rect = event.currentTarget.getBoundingClientRect();
+            const el = document.createElement('div');
+            el.className = 'floating-hearts';
+            el.textContent = emoji;
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+            el.style.fontSize = '30px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+            
+            // Increment shares as "engagement"
+            post.shares++;
+            localStorage.setItem('confession_posts', JSON.stringify(posts));
+            renderFeed();
+        }
+
+        function sharePost(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            const text = `🔥 Anonymous Confession from ConfessionWall:\n\n"${post.content.substring(0, 150)}..."\n\nJoin the conversation: ${window.location.href}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Anonymous Confession',
+                    text: text
+                });
+            } else {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Copied to clipboard!', 'success');
+                });
+            }
+            
+            post.shares++;
+            localStorage.setItem('confession_posts', JSON.stringify(posts));
+            renderFeed();
+        }
+
+        function showRandomConfession() {
+            if (posts.length === 0) return;
+            
+            const random = posts[Math.floor(Math.random() * posts.length)];
+            document.getElementById('random-text').textContent = random.content;
+            document.getElementById('random-stats').innerHTML = `
+                <span><i class="fas fa-heart text-red-400"></i> ${formatNumber(random.likes)}</span>
+                <span><i class="fas fa-comment text-blue-400"></i> ${random.comments?.length || 0}</span>
+                <span><i class="fas fa-share text-green-400"></i> ${formatNumber(random.shares)}</span>
+            `;
+            
+            document.getElementById('random-modal').classList.remove('hidden');
+        }
+
+        function filterPosts(type) {
+            currentFilter = type;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === type) {
+                    btn.classList.remove('bg-white/10', 'text-white');
+                    btn.classList.add('bg-white', 'text-gray-900');
+                } else {
+                    btn.classList.add('bg-white/10', 'text-white');
+                    btn.classList.remove('bg-white', 'text-gray-900');
+                }
+            });
+            
+            renderFeed();
+        }
+
+        function filterByTag(tag) {
+            const filtered = posts.filter(p => p.tags && p.tags.includes(tag));
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '';
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-gray-900');
+                btn.classList.add('bg-white/10');
+            });
+            
+            filtered.forEach(post => {
+                feed.appendChild(createPostElement(post));
+            });
+            
+            showToast(`Showing posts tagged with #${tag}`, 'info');
+        }
+
+        function generateRandomConfession() {
+            const starters = [
+                "I secretly...", "Nobody knows that I...", "I once accidentally...", 
+                "My biggest fear is...", "I've been pretending to...", "The truth is...",
+                "I can't believe I...", "Sometimes I wonder if...", "I saw something that..."
+            ];
+            const middles = [
+                " ate an entire cake meant for the party ",
+                " have been using my neighbor's WiFi for 2 years ",
+                " accidentally liked my crush's photo from 3 years ago ",
+                " still sleep with my childhood stuffed animal ",
+                " forged my parent's signature on a permission slip ",
+                " have a secret playlist of Disney songs ",
+                " once talked to a plant for an hour "
+            ];
+            const endings = [
+                "and I have no regrets.", "and it still keeps me up at night.", 
+                "and I'd do it again.", "and nobody suspected a thing.",
+                "and that's my biggest secret.", "and I'm strangely proud of it."
+            ];
+            
+            const text = starters[Math.floor(Math.random() * starters.length)] + 
+                        middles[Math.floor(Math.random() * middles.length)] + 
+                        endings[Math.floor(Math.random() * endings.length)];
+            
+            document.getElementById('post-content').value = text;
+            document.getElementById('char-count').textContent = text.length;
+            analyzeMood(text);
+        }
+
+        function setupMoodDetection() {
+            const textarea = document.getElementById('post-content');
+            textarea.addEventListener('input', (e) => {
+                document.getElementById('char-count').textContent = e.target.value.length;
+                analyzeMood(e.target.value);
+            });
+        }
+
+        function analyzeMood(text) {
+            const moods = {
+                happy: ['happy', 'joy', 'excited', 'love', 'amazing', 'great', 'awesome'],
+                sad: ['sad', 'depressed', 'lonely', 'cry', 'hurt', 'pain', 'miss'],
+                angry: ['hate', 'angry', 'mad', 'furious', 'annoyed', 'frustrated'],
+                anxious: ['anxious', 'nervous', 'worried', 'scared', 'afraid', 'stress'],
+                funny: ['lol', 'funny', 'haha', 'joke', 'laugh', 'hilarious'],
+                embarrassed: ['embarrass', 'awkward', 'cringe', 'shame'],
+                mischievous: ['secret', 'sneaky', 'hack', 'prank', 'plot']
+            };
+            
+            let detectedMood = 'neutral';
+            let maxCount = 0;
+            
+            for (const [mood, keywords] of Object.entries(moods)) {
+                const count = keywords.filter(k => text.toLowerCase().includes(k)).length;
+                if (count > maxCount) {
+                    maxCount = count;
+                    detectedMood = mood;
+                }
+            }
+            
+            const moodEmojis = {
+                happy: '😊 Happy', sad: '😢 Sad', angry: '😠 Angry',
+                anxious: '😰 Anxious', funny: '😂 Funny', embarrassed: '😳 Embarrassed',
+                mischievous: '😈 Mischievous', neutral: '😐 Neutral'
+            };
+            
+            const moodColors = {
+                happy: 'bg-yellow-500', sad: 'bg-blue-500', angry: 'bg-red-500',
+                anxious: 'bg-purple-500', funny: 'bg-orange-500', embarrassed: 'bg-pink-500',
+                mischievous: 'bg-green-500', neutral: 'bg-gray-500'
+            };
+            
+            document.getElementById('mood-indicator').textContent = moodEmojis[detectedMood];
+            const bar = document.getElementById('mood-bar');
+            bar.className = `h-full transition-all duration-500 ${moodColors[detectedMood]}`;
+            bar.style.width = Math.min(50 + (maxCount * 15), 100) + '%';
+        }
+
+        function addTag(tag) {
+            const textarea = document.getElementById('post-content');
+            textarea.value += ` #${tag}`;
+            analyzeMood(textarea.value);
+        }
+
+        function updateStats() {
+            document.getElementById('total-count').textContent = posts.length;
+            document.getElementById('today-count').textContent = posts.filter(p => Date.now() - p.timestamp < 86400000).length;
+            document.getElementById('reaction-count').textContent = formatNumber(
+                posts.reduce((acc, p) => acc + p.likes + (p.comments?.length || 0) + p.shares, 0)
+            );
+        }
+
+        function updateUserStats() {
+            document.getElementById('my-posts').textContent = currentUser.posts;
+            document.getElementById('my-likes').textContent = currentUser.likes;
+            document.getElementById('my-comments').textContent = currentUser.comments;
+        }
+
+        function updateTrendingTopics() {
+            const allTags = posts.flatMap(p => p.tags || []);
+            const tagCounts = {};
+            allTags.forEach(tag => {
+                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+            
+            const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const container = document.getElementById('trending-topics');
+            
+            container.innerHTML = sorted.map(([tag, count], i) => `
+                <div class="flex items-center justify-between cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-colors" onclick="filterByTag('${tag}')">
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg font-bold ${i < 3 ? 'text-purple-400' : 'text-gray-500'}">#${i + 1}</span>
+                        <span class="text-sm">#${tag}</span>
+                    </div>
+                    <span class="text-xs text-gray-500">${count} posts</span>
+                </div>
+            `).join('');
+        }
+
+        function updateOnlineCount() {
+            const count = Math.floor(Math.random() * 5000) + 10000;
+            document.getElementById('global-users').textContent = count.toLocaleString() + ' online';
+        }
+
+        function startLiveActivity() {
+            const activities = [
+                "Someone just posted",
+                "New confession trending 🔥",
+                "Someone reacted with 💀",
+                "Trending post getting hot!",
+                "Anonymous user shared a secret",
+                "New comment on trending post",
+                "Someone is typing..."
+            ];
+            
+            const container = document.getElementById('live-activity');
+            
+            setInterval(() => {
+                const activity = activities[Math.floor(Math.random() * activities.length)];
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-3 text-gray-400 animate-pulse';
+                div.innerHTML = `
+                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span>${activity}</span>
+                `;
+                container.prepend(div);
+                if (container.children.length > 5) container.lastChild.remove();
+            }, 8000);
+        }
+
+        function simulateNewActivity() {
+            // Simulate occasional new posts appearing
+            if (Math.random() > 0.7 && posts.length < 20) {
+                const newPost = {
+                    id: Date.now(),
+                    content: "Just testing this amazing platform! Can't believe it's completely anonymous 😱 #confession",
+                    likes: Math.floor(Math.random() * 50),
+                    comments: [],
+                    shares: Math.floor(Math.random() * 10),
+                    timestamp: Date.now(),
+                    mood: 'excited',
+                    tags: ['confession'],
+                    trending: false
+                };
+                posts.unshift(newPost);
+                localStorage.setItem('confession_posts', JSON.stringify(posts));
+                
+                if (currentFilter === 'all' || currentFilter === 'fresh') {
+                    const feed = document.getElementById('feed');
+                    const newEl = createPostElement(newPost);
+                    newEl.style.animation = 'slideUp 0.6s ease-out';
+                    feed.prepend(newEl);
+                    
+                    showToast('New confession just posted!', 'info');
+                }
+            }
+        }
+
+        function createFloatingHearts() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'floating-hearts';
+                    heart.innerHTML = '❤️';
+                    heart.style.left = (Math.random() * window.innerWidth) + 'px';
+                    heart.style.top = window.innerHeight + 'px';
+                    heart.style.fontSize = (Math.random() * 20 + 20) + 'px';
+                    document.body.appendChild(heart);
+                    setTimeout(() => heart.remove(), 4000);
+                }, i * 200);
+            }
+        }
+
+        function createHeartBurst(x, y) {
+            const emojis = ['❤️', '💖', '💕', '💗', '💝'];
+            for (let i = 0; i < 6; i++) {
+                const el = document.createElement('div');
+                el.className = 'floating-hearts';
+                el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                el.style.left = (x + (Math.random() * 60 - 30)) + 'px';
+                el.style.top = (y + (Math.random() * 60 - 30)) + 'px';
+                el.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 4000);
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-purple-500'
+            };
+            
+            toast.className = `notification-toast ${colors[type]} text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check' : type === 'error' ? 'fa-exclamation' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num;
+        }
+
+        function formatTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'm ago';
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + 'h ago';
+            const days = Math.floor(hours / 24);
+            return days + 'd ago';
+        }
+
+        function getMoodEmoji(mood) {
+            const emojis = {
+                happy: '😊', sad: '😢', angry: '😠', anxious: '😰',
+                funny: '😂', embarrassed: '😳', mischievous: '😈',
+                excited: '🤩', tired: '😴', wholesome: '🥰'
+            };
+            return emojis[mood] || '🎭';
+        }
+
+        function detectMood(text) {
+            const lower = text.toLowerCase();
+            if (lower.includes('love') || lower.includes('happy')) return 'happy';
+            if (lower.includes('sad') || lower.includes('cry')) return 'sad';
+            if (lower.includes('angry') || lower.includes('hate')) return 'angry';
+            if (lower.includes('nervous') || lower.includes('anxious')) return 'anxious';
+            if (lower.includes('lol') || lower.includes('funny')) return 'funny';
+            if (lower.includes('embarrass') || lower.includes('cringe')) return 'embarrassed';
+            if (lower.includes('secret') || lower.includes('hack')) return 'mischievous';
+            return 'neutral';
+        }
+
+        function extractTags(text) {
+            const tags = text.match(/#(\w+)/g);
+            return tags ? tags.map(t => t.substr(1)) : [];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function openPostModal() {
+            document.getElementById('post-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('post-content').focus(), 100);
+        }
+
+        function closePostModal() {
+            document.getElementById('post-modal').classList.add('hidden');
+        }
+
+        function closeCommentsModal() {
+            document.getElementById('comments-modal').classList.add('hidden');
+            currentPostId = null;
+        }
+
+        function closeRandomModal() {
+            document.getElementById('random-modal').classList.add('hidden');
+        }
+
+        function showNotifications() {
+            showToast('🔔 You have 3 new reactions on your posts!', 'info');
+        }
+
+        function showPostOptions(postId) {
+            if (confirm('Report this post?')) {
+                showToast('Post reported. Thank you for keeping the community safe.', 'success');
+            }
+        }
+
+        function likeComment(commentId) {
+            showToast('Comment liked! 💙', 'success');
+        }
+
+        function loadMore() {
+            const btn = event.target;
+            const spinner = document.getElementById('load-spinner');
+            spinner.classList.remove('hidden');
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                spinner.classList.add('hidden');
+                btn.disabled = false;
+                showToast('No more posts to load', 'info');
+            }, 1500);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePostModal();
+                closeCommentsModal();
+                closeRandomModal();
+            }
+            if (e.key === 'n' && e.ctrlKey) {
+                e.preventDefault();
+                openPostModal();
+            }
+        });
+    </script>
+</body>
+</html>
