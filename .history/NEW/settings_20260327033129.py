@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import dj_database_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,11 +30,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-li53#xt(ftr+y@@b+2)9s62efdbz7yfgfl-wgzr38p3qkvj4xk"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = [
-    "*"
-]  # PythonAnywhere: update to your domain (e.g., 'username.pythonanywhere.com')
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -76,37 +76,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "NEW.wsgi.application"
 
-# Static files
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static_root"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
-
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',
-#         # Paste the text BETWEEN :// and : from your copied string below
-#         'USER': 'postgres.abc123defg',
-#         # Paste your ACTUAL password here (the part after USER: and before @)
-#         'PASSWORD': 'X9?y5Du*dWG#6uP',
-#         # Paste the text BETWEEN @ and : (the part before the port number)
-#         'HOST': 'aws-0-us-east-1.pooler.supabase.com',
-#         # The number after the last colon :
-#         'PORT': '6543',
-#         'OPTIONS': {
-#             'sslmode': 'require',
-#         },
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'paste_your_actual_password_here',
+        'HOST': 'paste_your_db_host_here', # e.g., db.abcdefg.supabase.co
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require', # This is mandatory for Supabase
+        },
+    }
+}
 
 # import os
 # import dj_database_url

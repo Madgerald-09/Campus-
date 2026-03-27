@@ -28,11 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-li53#xt(ftr+y@@b+2)9s62efdbz7yfgfl-wgzr38p3qkvj4xk"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = [
-    "*"
-]  # PythonAnywhere: update to your domain (e.g., 'username.pythonanywhere.com')
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -76,9 +74,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "NEW.wsgi.application"
 
-# Static files
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static_root"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -95,13 +90,13 @@ DATABASES = {
 #         'ENGINE': 'django.db.backends.postgresql',
 #         'NAME': 'postgres',
 #         # Paste the text BETWEEN :// and : from your copied string below
-#         'USER': 'postgres.abc123defg',
+#         'USER': 'postgres.abc123defg', 
 #         # Paste your ACTUAL password here (the part after USER: and before @)
-#         'PASSWORD': 'X9?y5Du*dWG#6uP',
+#         'PASSWORD': 'X9?y5Du*dWG#6uP', 
 #         # Paste the text BETWEEN @ and : (the part before the port number)
-#         'HOST': 'aws-0-us-east-1.pooler.supabase.com',
+#         'HOST': 'aws-0-us-east-1.pooler.supabase.com', 
 #         # The number after the last colon :
-#         'PORT': '6543',
+#         'PORT': '6543', 
 #         'OPTIONS': {
 #             'sslmode': 'require',
 #         },

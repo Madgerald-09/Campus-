@@ -28,11 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-li53#xt(ftr+y@@b+2)9s62efdbz7yfgfl-wgzr38p3qkvj4xk"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = [
-    "*"
-]  # PythonAnywhere: update to your domain (e.g., 'username.pythonanywhere.com')
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -76,9 +74,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "NEW.wsgi.application"
 
-# Static files
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static_root"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
